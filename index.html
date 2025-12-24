@@ -1,1 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue Space - Gestión Inteligente</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuración de Tailwind para los colores de marca -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0A2540',
+                            accent: '#38BDF8',
+                            light: '#F8FAFC'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Ocultar Scrollbar para carruseles horizontales */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Animaciones */
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
+        }
+
+        /* Estilos base para iconos Lucide */
+        .lucide {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="selection:bg-blue-200">
+
+    <!-- Contenedor Principal (Mobile View) -->
+    <main id="app-container" class="max-w-md mx-auto bg-slate-50 min-h-screen relative shadow-2xl overflow-hidden">
+        <!-- El contenido se inyectará aquí dinámicamente -->
+    </main>
+
+    <script>
+        // --- Estado de la Aplicación ---
+        const state = {
+            currentScreen: 'login', // login, home, payments, news, booking, profile
+            isLoggedIn: false,
+            userData: {
+                name: "Andrea Martínez",
+                unit: "Torre A - Depto 402",
+                status: "Al día"
+            }
+        };
+
+        // --- Renderizado de Componentes ---
+
+        // 1. Header Component
+        const renderHeader = (title, showNotification = true) => {
+            const unitHtml = state.currentScreen === 'home' 
+                ? `<p class="text-blue-200 text-sm mt-1">${state.userData.unit}</p>` 
+                : '';
+            
+            const notificationHtml = showNotification 
+                ? `<button class="relative p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
+                     <i data-lucide="bell" width="20" height="20"></i>
+                     <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-brand-dark"></span>
+                   </button>` 
+                : '';
+
+            return `
+                <header class="bg-brand-dark text-white p-4 pt-12 pb-6 rounded-b-3xl shadow-lg sticky top-0 z-10">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-xl font-bold tracking-wide">${title}</h1>
+                            ${unitHtml}
+                        </div>
+                        ${notificationHtml}
+                    </div>
+                </header>
+            `;
+        };
+
+        // 2. Bottom Nav Component
+        const renderNav = () => {
+            const navItems = [
+                { screen: 'home', icon: 'home', label: 'Inicio' },
+                { screen: 'payments', icon: 'credit-card', label: 'Pagos' },
+                { screen: 'center', icon: 'megaphone', label: '' }, // Botón central
+                { screen: 'booking', icon: 'calendar', label: 'Reservas' },
+                { screen: 'profile', icon: 'user', label: 'Perfil' }
+            ];
+
+            const buttonsHtml = navItems.map(item => {
+                if (item.screen === 'center') {
+                    return `
+                        <div class="relative -top-6">
+                            <button onclick="navigate('news')" class="bg-brand-dark p-4 rounded-full text-white shadow-lg shadow-blue-900/40 hover:scale-105 transition transform">
+                                <i data-lucide="megaphone" width="24" height="24"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                const isActive = state.currentScreen === item.screen;
+                const activeColor = isActive ? 'text-brand-dark' : 'text-slate-400';
+                const strokeWidth = isActive ? '2.5' : '2';
+
+                return `
+                    <button onclick="navigate('${item.screen}')" class="flex flex-col items-center gap-1 transition ${activeColor}">
+                        <i data-lucide="${item.icon}" width="24" height="24" stroke-width="${strokeWidth}"></i>
+                        <span class="text-[10px] font-medium">${item.label}</span>
+                    </button>
+                `;
+            }).join('');
+
+            return `
+                <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 py-3 pb-6 px-6 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50">
+                    ${buttonsHtml}
+                </nav>
+            `;
+        };
+
+        // --- Vistas (Screens) ---
+
+        const renderLogin = () => `
+            <div class="min-h-screen bg-brand-dark flex flex-col justify-center px-8 relative overflow-hidden">
+                <!-- Decoración Fondo -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-[100px] opacity-20 -mr-20 -mt-20"></div>
+                <div class="absolute bottom-0 left-0 w-48 h-48 bg-cyan-400 rounded-full blur-[80px] opacity-20 -ml-10 -mb-10"></div>
+
+                <div class="relative z-10 text-center mb-12">
+                    <div class="w-20 h-20 bg-white rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-2xl">
+                        <div class="w-12 h-12 border-4 border-brand-dark rounded-lg transform rotate-45 flex items-center justify-center">
+                            <div class="w-4 h-4 bg-brand-dark rounded-sm"></div>
+                        </div>
+                    </div>
+                    <h1 class="text-4xl font-bold text-white tracking-tight mb-2">Blue Space</h1>
+                    <p class="text-blue-200">Gestión inteligente para tu hogar</p>
+                </div>
+
+                <form onsubmit="handleLogin(event)" class="space-y-6 relative z-10">
+                    <div class="space-y-4">
+                        <div class="relative">
+                            <div class="absolute left-4 top-3.5 text-slate-400"><i data-lucide="user" width="20"></i></div>
+                            <input type="email" placeholder="Correo electrónico" class="w-full bg-white/10 border border-white/20 text-white placeholder-blue-200/50 pl-12 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 backdrop-blur-sm transition">
+                        </div>
+                        <div class="relative">
+                            <div class="absolute left-4 top-3.5 text-slate-400">
+                                <i data-lucide="lock" width="20"></i>
+                            </div>
+                            <input type="password" placeholder="Contraseña" class="w-full bg-white/10 border border-white/20 text-white placeholder-blue-200/50 pl-12 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 backdrop-blur-sm transition">
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <button type="button" class="text-sm text-blue-300 hover:text-white transition">¿Olvidaste tu contraseña?</button>
+                    </div>
+
+                    <button type="submit" class="w-full bg-white text-brand-dark font-bold py-4 rounded-xl shadow-lg hover:bg-blue-50 transition transform hover:scale-[1.02]">
+                        Iniciar Sesión
+                    </button>
+                </form>
+
+                <p class="mt-8 text-center text-blue-200/60 text-xs">v2.4.0 • Blue Space PropTech</p>
+            </div>
+        `;
+
+        const renderHome = () => `
+            <div class="pb-24 animate-fade-in">
+                ${renderHeader(`Hola, ${state.userData.name.split(' ')[0]}`)}
+                
+                <div class="px-6 -mt-6">
+                    <!-- Status Card -->
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 mb-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <p class="text-slate-500 text-sm font-medium uppercase tracking-wider">Estado Financiero</p>
+                                <h3 class="text-2xl font-bold text-slate-800 mt-1">Al día</h3>
+                            </div>
+                            <div class="bg-green-100 p-2 rounded-full text-green-600">
+                                <i data-lucide="check-circle-2" width="24"></i>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 mb-2">
+                            <div class="bg-green-500 h-2 rounded-full w-full"></div>
+                        </div>
+                        <p class="text-xs text-slate-400">Último pago realizado el 05 Mar</p>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <h3 class="text-lg font-bold text-brand-dark mb-4">Accesos Rápidos</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-8">
+                        <button onclick="navigate('payments')" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:shadow-md transition">
+                            <div class="p-3 rounded-full bg-blue-50 text-blue-600"><i data-lucide="credit-card" width="24"></i></div>
+                            <span class="text-sm font-medium text-slate-600">Pagar Gasto</span>
+                        </button>
+                        <button onclick="navigate('booking')" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:shadow-md transition">
+                            <div class="p-3 rounded-full bg-purple-50 text-purple-600"><i data-lucide="calendar" width="24"></i></div>
+                            <span class="text-sm font-medium text-slate-600">Reservar</span>
+                        </button>
+                        <button class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:shadow-md transition">
+                            <div class="p-3 rounded-full bg-orange-50 text-orange-600"><i data-lucide="alert-circle" width="24"></i></div>
+                            <span class="text-sm font-medium text-slate-600">Reportar</span>
+                        </button>
+                        <button class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:shadow-md transition">
+                            <div class="p-3 rounded-full bg-emerald-50 text-emerald-600"><i data-lucide="user" width="24"></i></div>
+                            <span class="text-sm font-medium text-slate-600">Visitas</span>
+                        </button>
+                    </div>
+
+                    <!-- Mini Feed -->
+                    <h3 class="text-lg font-bold text-brand-dark mb-4">Novedades</h3>
+                    <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex gap-4 items-center cursor-pointer" onclick="navigate('news')">
+                        <div class="bg-blue-100 p-3 rounded-lg text-brand-dark">
+                            <i data-lucide="megaphone" width="20"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800 text-sm">Mantención Ascensores</h4>
+                            <p class="text-xs text-slate-500 line-clamp-1">Mañana de 10:00 a 14:00 hrs se realizará...</p>
+                        </div>
+                        <div class="ml-auto text-slate-300"><i data-lucide="chevron-right" width="16"></i></div>
+                    </div>
+                </div>
+            </div>
+            ${renderNav()}
+        `;
+
+        const renderPayments = () => `
+            <div class="pb-24 animate-fade-in">
+                ${renderHeader("Pagos y Finanzas")}
+                <div class="px-6 py-6">
+                    <!-- Debt Card -->
+                    <div class="bg-gradient-to-br from-brand-dark to-blue-900 rounded-2xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+                        <p class="text-blue-200 text-sm mb-1">Total a pagar</p>
+                        <h2 class="text-4xl font-bold mb-4">$85.400</h2>
+                        <div class="flex gap-2 text-sm bg-white/10 p-2 rounded-lg inline-flex items-center backdrop-blur-sm">
+                            <i data-lucide="alert-circle" width="14" class="text-yellow-400 mr-1"></i>
+                            <span>Vence el 30 de Marzo</span>
+                        </div>
+                        <button class="w-full mt-6 bg-white text-brand-dark font-bold py-3 rounded-xl shadow-lg hover:bg-blue-50 transition">
+                            Pagar Ahora
+                        </button>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-brand-dark">Historial</h3>
+                        <button class="text-sm text-blue-600 font-medium">Ver todo</button>
+                    </div>
+
+                    <div class="space-y-4">
+                        ${[
+                            { month: "Marzo 2024", amount: "$85.400", status: "Pendiente", color: "text-orange-600 bg-orange-100" },
+                            { month: "Febrero 2024", amount: "$82.100", status: "Pagado", color: "text-green-600 bg-green-100" },
+                            { month: "Enero 2024", amount: "$79.900", status: "Pagado", color: "text-green-600 bg-green-100" },
+                            { month: "Diciembre 2023", amount: "$88.500", status: "Pagado", color: "text-green-600 bg-green-100" }
+                        ].map(item => `
+                            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center">
+                                <div class="flex items-center gap-4">
+                                    <div class="bg-slate-50 p-3 rounded-lg text-slate-500">
+                                        <i data-lucide="file-text" width="20"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-slate-800">${item.month}</h4>
+                                        <span class="text-xs px-2 py-0.5 rounded-full font-medium ${item.color}">
+                                            ${item.status}
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="font-bold text-slate-700">${item.amount}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+            ${renderNav()}
+        `;
+
+        const renderNews = () => `
+            <div class="pb-24 animate-fade-in">
+                ${renderHeader("Comunicados")}
+                <div class="px-6 py-6 space-y-6">
+                    <!-- Featured -->
+                    <div class="bg-amber-50 border border-amber-100 rounded-2xl p-5 relative">
+                        <div class="flex gap-2 items-center mb-3">
+                            <span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Urgente</span>
+                            <span class="text-xs text-slate-400">Hace 2 horas</span>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-lg mb-2">Corte de Agua Programado</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                            Estimados residentes, debido a reparaciones en la matriz principal, se cortará el suministro de agua mañana entre las 14:00 y 18:00 hrs.
+                        </p>
+                        <button class="text-amber-700 text-sm font-semibold hover:underline">Leer comunicado completo</button>
+                    </div>
+
+                    <!-- Feed -->
+                    ${[
+                        { title: "Nueva Administración", date: "20 Mar", preview: "Damos la bienvenida al nuevo equipo...", type: "Info" },
+                        { title: "Protocolo Piscina Otoño", date: "15 Mar", preview: "Recordamos los nuevos horarios...", type: "Reglamento" },
+                        { title: "Fiesta de la Comunidad", date: "10 Mar", preview: "Gracias a todos los que asistieron...", type: "Social" },
+                    ].map(item => `
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                             <div class="flex justify-between items-start mb-2">
+                                <span class="text-blue-600 text-xs font-bold uppercase">${item.type}</span>
+                                <span class="text-slate-400 text-xs">${item.date}</span>
+                             </div>
+                             <h3 class="font-bold text-slate-800 mb-2">${item.title}</h3>
+                             <p class="text-slate-500 text-sm line-clamp-2 mb-3">${item.preview}</p>
+                             <button class="w-full py-2 text-center text-sm text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 transition">Ver detalles</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ${renderNav()}
+        `;
+
+        const renderBooking = () => `
+            <div class="pb-24 animate-fade-in">
+                ${renderHeader("Reservas")}
+                <div class="px-6 py-6">
+                    <h3 class="text-lg font-bold text-brand-dark mb-4">Espacios Comunes</h3>
+                    <div class="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
+                        ${[
+                            { name: "Quincho A", status: "Disponible", image: "linear-gradient(135deg, #f6d365 0%, #fda085 100%)", sColor: 'bg-green-400' },
+                            { name: "Piscina", status: "Lleno", image: "linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)", sColor: 'bg-red-400' },
+                            { name: "Sala Eventos", status: "Disponible", image: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)", sColor: 'bg-green-400' },
+                        ].map(item => `
+                            <div class="min-w-[160px] h-[200px] rounded-2xl relative overflow-hidden shadow-md flex-shrink-0 cursor-pointer group">
+                                <div class="absolute inset-0" style="background: ${item.image}"></div>
+                                <div class="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition"></div>
+                                <div class="absolute bottom-0 left-0 p-4 w-full">
+                                    <h4 class="text-white font-bold text-lg">${item.name}</h4>
+                                    <div class="flex items-center gap-1 mt-1">
+                                        <div class="w-2 h-2 rounded-full ${item.sColor}"></div>
+                                        <span class="text-white/90 text-xs">${item.status}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- Calendar Mock -->
+                    <div class="mt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-brand-dark">Marzo 2024</h3>
+                            <div class="flex gap-2">
+                                <button class="p-1 rounded hover:bg-slate-100"><i data-lucide="chevron-left" width="20"></i></button>
+                                <button class="p-1 rounded hover:bg-slate-100"><i data-lucide="chevron-right" width="20"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                            <div class="grid grid-cols-7 gap-2 text-center text-sm mb-2 text-slate-400">
+                                <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                            </div>
+                            <div class="grid grid-cols-7 gap-2 text-center text-sm font-medium text-slate-700">
+                                <span class="text-slate-300">26</span><span class="text-slate-300">27</span><span class="text-slate-300">28</span><span class="text-slate-300">29</span><span>1</span><span>2</span><span>3</span>
+                                <span>4</span><span>5</span><span class="bg-brand-dark text-white rounded-full w-8 h-8 flex items-center justify-center mx-auto shadow-lg shadow-blue-900/30">6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                                <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Time Slots -->
+                    <div class="mt-6">
+                        <h3 class="text-lg font-bold text-brand-dark mb-3">Horarios Disponibles (6 Mar)</h3>
+                        <div class="grid grid-cols-3 gap-3">
+                            ${['10:00', '11:00', '12:00', '14:00', '18:00', '20:00'].map((time, idx) => `
+                                <button class="py-3 rounded-lg text-sm font-medium border transition ${idx === 1 ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}">
+                                    ${time}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ${renderNav()}
+        `;
+
+        const renderProfile = () => `
+            <div class="pb-24 animate-fade-in">
+                <div class="bg-brand-dark pb-20 pt-12 px-6 rounded-b-[3rem] relative shadow-xl">
+                    <h1 class="text-white text-2xl font-bold mb-6 text-center">Mi Perfil</h1>
+                    <div class="flex flex-col items-center">
+                        <div class="w-24 h-24 bg-gradient-to-tr from-blue-400 to-cyan-300 rounded-full border-4 border-brand-dark shadow-xl flex items-center justify-center text-3xl font-bold text-white mb-3">
+                            AM
+                        </div>
+                        <h2 class="text-white text-xl font-bold">${state.userData.name}</h2>
+                        <p class="text-blue-200">${state.userData.unit}</p>
+                    </div>
+                </div>
+
+                <div class="px-6 -mt-10 relative z-10">
+                    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+                        ${[
+                            { label: "Editar Datos Personales", icon: "user" },
+                            { label: "Configuración", icon: "bell" },
+                            { label: "Métodos de Pago", icon: "credit-card" },
+                            { label: "Ayuda y Soporte", icon: "help-circle" },
+                        ].map(item => `
+                            <button class="w-full flex items-center justify-between p-5 border-b border-slate-50 hover:bg-slate-50 transition">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-slate-400"><i data-lucide="${item.icon}" width="20"></i></div>
+                                    <span class="text-slate-700 font-medium">${item.label}</span>
+                                </div>
+                                <div class="text-slate-300"><i data-lucide="chevron-right" width="18"></i></div>
+                            </button>
+                        `).join('')}
+                        <button onclick="handleLogout()" class="w-full flex items-center gap-4 p-5 hover:bg-red-50 transition text-red-500 font-medium">
+                            <div class=""><i data-lucide="log-out" width="20"></i></div>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-8 text-center">
+                         <div class="inline-flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-full">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span class="text-xs text-slate-500 font-medium">Sistemas Operativos</span>
+                         </div>
+                    </div>
+                </div>
+            </div>
+            ${renderNav()}
+        `;
+
+        // --- Core Functions ---
+
+        const updateApp = () => {
+            const container = document.getElementById('app-container');
+            
+            if (!state.isLoggedIn) {
+                container.innerHTML = renderLogin();
+            } else {
+                switch(state.currentScreen) {
+                    case 'home': container.innerHTML = renderHome(); break;
+                    case 'payments': container.innerHTML = renderPayments(); break;
+                    case 'news': container.innerHTML = renderNews(); break;
+                    case 'booking': container.innerHTML = renderBooking(); break;
+                    case 'profile': container.innerHTML = renderProfile(); break;
+                    default: container.innerHTML = renderHome();
+                }
+            }
+            
+            // Re-inicializar iconos Lucide después de actualizar el DOM
+            lucide.createIcons();
+        };
+
+        const navigate = (screen) => {
+            state.currentScreen = screen;
+            updateApp();
+            window.scrollTo(0, 0);
+        };
+
+        const handleLogin = (e) => {
+            e.preventDefault();
+            state.isLoggedIn = true;
+            state.currentScreen = 'home';
+            updateApp();
+        };
+
+        const handleLogout = () => {
+            state.isLoggedIn = false;
+            state.currentScreen = 'login';
+            updateApp();
+        };
+
+        // --- Inicialización ---
+        window.addEventListener('DOMContentLoaded', () => {
+            updateApp();
+        });
+
+    </script>
+</body>
+</html>
 
